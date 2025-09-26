@@ -1,0 +1,22 @@
+body {
+  background-color: #1f1c25;
+  color: #f0e6d1;
+  font-family: "Luminari", "Georgia", serif;
+  line-height: 1.7;
+  margin: 0;
+  padding: 20px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+b { font-weight: 900; }
+
+h1,h2,h3,h4,h5,h6 {
+  color: #dda15e;
+  margin-top: 24px;
+  margin-bottom: 16px;
+  text-shadow: 2px 2px 4px #000;
+}
+
+/* (rest of CSS omitted in example; you can paste the full CSS from the assignment) */
