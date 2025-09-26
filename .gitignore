@@ -10,4 +10,5 @@ venv/
 # Editor
 .vscode/
 .idea/
-public/
+# public/
+*.bak
