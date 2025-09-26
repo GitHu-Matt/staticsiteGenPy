@@ -1,70 +1,61 @@
 #!/usr/bin/env python3
-import os
-import shutil
 from pathlib import Path
+import shutil
+import os
+import sys
 
 from generate_page import generate_page
 
-def empty_dir(path: Path):
-    """
-    Delete the directory if it exists (recursively) and recreate it empty.
-    """
-    if path.exists():
-        if path.is_dir():
-            print(f"Removing existing directory {path}")
-            shutil.rmtree(path)
-        else:
-            path.unlink()
-    path.mkdir(parents=True, exist_ok=True)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+STATIC_DIR = PROJECT_ROOT / "static"
+CONTENT_DIR = PROJECT_ROOT / "content"
+PUBLIC_DIR = PROJECT_ROOT / "public"
+TEMPLATE_PATH = PROJECT_ROOT / "template.html"
 
-def copy_recursive(src: Path, dst: Path):
-    """
-    Recursively copy src -> dst. Logs each copied file.
-    """
-    if not src.exists():
-        raise FileNotFoundError(f"Source path does not exist: {src}")
+def remove_public(dest: Path) -> None:
+    if dest.exists():
+        print(f"Removing existing directory {dest}")
+        shutil.rmtree(dest)
+    else:
+        print(f"No existing {dest} to remove")
 
-    for entry in src.iterdir():
-        src_path = entry
-        dst_path = dst / entry.name
-        if entry.is_dir():
-            dst_path.mkdir(parents=True, exist_ok=True)
-            copy_recursive(src_path, dst_path)
-        elif entry.is_file():
-            shutil.copy2(src_path, dst_path)
-            print(f"Copied file: {src_path} -> {dst_path}")
-        else:
-            try:
-                shutil.copy2(src_path, dst_path)
-                print(f"Copied special file: {src_path} -> {dst_path}")
-            except Exception as e:
-                print(f"Skipping {src_path}: {e}")
-
-def build_static(static_dir: str = "static", public_dir: str = "public"):
-    """
-    Copy all files from static/ into public/
-    """
-    base = Path.cwd()
-    src = base / static_dir
-    dst = base / public_dir
-
-    if not src.exists():
-        raise FileNotFoundError(f"Static source directory not found: {src}")
-
-    # empty the destination dir
-    empty_dir(dst)
-
-    # copy all
-    print(f"Copying from {src} --> {dst}")
-    copy_recursive(src, dst)
+def copy_static(src: Path, dest: Path) -> None:
+    print(f"Copying from {src} --> {dest}")
+    # copytree requires dest not to exist
+    shutil.copytree(src, dest)
     print("Copy complete.")
 
-def main():
-    # 1) copy static files
-    build_static("static", "public")
+def generate_all_pages(content_root: Path, template_path: Path, public_root: Path) -> None:
+    if not content_root.exists():
+        print(f"No content directory found at {content_root}. Nothing to generate.")
+        return
 
-    # 2) generate the page from content/index.md using template.html
-    generate_page("content/index.md", "template.html", "public/index.html")
+    # Walk through the content directory and find index.md files
+    for dirpath, dirnames, filenames in os.walk(content_root):
+        dirpath = Path(dirpath)
+        if "index.md" in filenames:
+            from_path = dirpath / "index.md"
+            # compute relative path under content_root
+            rel = dirpath.relative_to(content_root)
+            dest_dir = public_root / rel
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            dest_path = dest_dir / "index.html"
+            # generate page
+            generate_page(str(from_path), str(template_path), str(dest_path))
+
+def main():
+    # 1) Remove and recreate public (clean build)
+    remove_public(PUBLIC_DIR)
+
+    # 2) Copy static into public
+    if STATIC_DIR.exists():
+        copy_static(STATIC_DIR, PUBLIC_DIR)
+    else:
+        # Create empty public dir if no static
+        PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
+
+    # 3) Generate pages for every index.md under content/
+    generate_all_pages(CONTENT_DIR, TEMPLATE_PATH, PUBLIC_DIR)
 
 if __name__ == "__main__":
     main()

@@ -42,14 +42,12 @@ def generate_page(from_path: str, template_path: str, dest_path: str) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(full_html, encoding="utf-8")
 
-
 def generate_pages_recursive(dir_path_content: str, template_path: str, dest_dir_path: str) -> None:
     """
     Recursively generate HTML pages from markdown files in dir_path_content.
     - For each .md file, create a corresponding .html file in dest_dir_path
     - Preserve the same directory structure
     """
-    # Ensure input paths are strings (os.listdir works with strings)
     entries = os.listdir(dir_path_content)
 
     for entry in entries:
@@ -62,6 +60,5 @@ def generate_pages_recursive(dir_path_content: str, template_path: str, dest_dir
             generate_page(entry_path, template_path, dest_html_path)
 
         elif os.path.isdir(entry_path):
-            # Ensure destination directory exists, then recurse
-            os.makedirs(dest_path, exist_ok=True)
+            # Recurse into subdirectories
             generate_pages_recursive(entry_path, template_path, dest_path)
